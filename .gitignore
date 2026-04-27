@@ -1,0 +1,38 @@
+# ========== 后端项目 ==========
+backend/target/
+backend/.settings/
+backend/.classpath
+backend/.project
+backend/.idea/
+backend/*.iml
+backend/logs/
+backend/uploads/
+backend/*.log
+backend/.spring-boot-devtools.properties
+
+# ========== 前端项目 ==========
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/*.local
+frontend/coverage/
+
+# ========== 系统文件 ==========
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# ========== IDE文件 ==========
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# ========== 日志文件 ==========
+*.log
+logs/
