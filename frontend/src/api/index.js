@@ -95,18 +95,14 @@ export const fileApi = {
   upload: (file) => {
     const formData = new FormData()
     formData.append('file', file)
-    return request.post('/files/upload', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    })
+    return request.post('/files/upload', formData)
   },
   uploadMultiple: (files) => {
     const formData = new FormData()
     files.forEach((file, index) => {
       formData.append('files', file)
     })
-    return request.post('/files/uploads', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    })
+    return request.post('/files/uploads', formData)
   }
 }
 
