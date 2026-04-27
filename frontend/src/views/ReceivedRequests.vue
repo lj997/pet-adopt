@@ -2,7 +2,7 @@
   <div class="page-container">
     <h2 class="page-title">领养申请</h2>
 
-    <el-tabs v-model="activeTab" @tab-click="handleTabChange">
+    <el-tabs v-model="activeTab">
       <el-tab-pane label="全部" name="all" />
       <el-tab-pane label="待审核" name="PENDING" />
       <el-tab-pane label="已通过" name="APPROVED" />
@@ -111,7 +111,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { adoptionApi } from '@/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -133,14 +133,14 @@ const getStatusType = (status) => {
   return types[status] || ''
 }
 
-const fetchRequests = async (status = null) => {
+const fetchRequests = async (status) => {
   loading.value = true
   try {
     let res
-    if (status && status !== 'all') {
-      res = await adoptionApi.getReceivedRequestsByStatus(status)
-    } else {
+    if (status === 'all') {
       res = await adoptionApi.getReceivedRequests()
+    } else {
+      res = await adoptionApi.getReceivedRequestsByStatus(status)
     }
     requests.value = res.data
   } catch (error) {
@@ -150,9 +150,9 @@ const fetchRequests = async (status = null) => {
   }
 }
 
-const handleTabChange = (tab) => {
-  fetchRequests(tab.name)
-}
+watch(activeTab, (newTab) => {
+  fetchRequests(newTab)
+}, { immediate: true })
 
 const goToPetDetail = (petId) => {
   router.push(`/pet/${petId}`)
@@ -199,10 +199,6 @@ const rejectRequest = async (item) => {
     }
   }
 }
-
-onMounted(() => {
-  fetchRequests()
-})
 </script>
 
 <style lang="scss" scoped>

@@ -57,13 +57,13 @@
         <el-form-item label="照片">
           <el-upload
             v-model:file-list="fileList"
-            :action="uploadUrl"
-            :headers="uploadHeaders"
+            :auto-upload="false"
             list-type="picture-card"
-            :on-success="handleUploadSuccess"
+            :on-change="handleUploadChange"
             :on-remove="handleRemove"
             :limit="9"
             accept="image/*"
+            :multiple="true"
           >
             <el-icon><Plus /></el-icon>
             <template #tip>
@@ -83,23 +83,17 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
-import { useUserStore } from '@/stores/user'
-import { petApi } from '@/api'
+import { petApi, fileApi } from '@/api'
 import { ElMessage } from 'element-plus'
 
 const router = useRouter()
-const userStore = useUserStore()
 
 const formRef = ref(null)
 const loading = ref(false)
 const fileList = ref([])
-
-const uploadUrl = computed(() => '/api/files/upload')
-const uploadHeaders = computed(() => ({
-  Authorization: `Bearer ${userStore.token}`
-}))
+const pendingFiles = ref([])
 
 const form = reactive({
   name: '',
@@ -121,19 +115,47 @@ const rules = {
   city: [{ required: true, message: '请输入所在城市', trigger: 'blur' }]
 }
 
-const handleUploadSuccess = (response, file, fileListData) => {
-  if (response.code === 200) {
-    form.photos.push(response.data.url)
-  } else {
-    ElMessage.error('上传失败')
+const handleUploadChange = (file, fileListData) => {
+  if (file.status === 'ready') {
+    pendingFiles.value.push(file.raw)
+    fileList.value = fileListData
   }
 }
 
 const handleRemove = (file, fileListData) => {
-  const index = form.photos.findIndex(url => url === file.response?.data?.url || file.url)
-  if (index > -1) {
-    form.photos.splice(index, 1)
+  const fileUrl = file.response?.data?.url || file.url
+  
+  if (fileUrl) {
+    const index = form.photos.findIndex(url => url === fileUrl)
+    if (index > -1) {
+      form.photos.splice(index, 1)
+    }
   }
+  
+  const pendingIndex = pendingFiles.value.findIndex(f => f.name === file.name)
+  if (pendingIndex > -1) {
+    pendingFiles.value.splice(pendingIndex, 1)
+  }
+  
+  fileList.value = fileListData
+}
+
+const uploadPendingFiles = async () => {
+  if (pendingFiles.value.length === 0) return
+  
+  for (const file of pendingFiles.value) {
+    try {
+      const res = await fileApi.upload(file)
+      if (res.code === 200) {
+        form.photos.push(res.data.url)
+      }
+    } catch (error) {
+      ElMessage.error(`上传图片失败: ${file.name}`)
+      throw error
+    }
+  }
+  
+  pendingFiles.value = []
 }
 
 const handleSubmit = async () => {
@@ -142,6 +164,7 @@ const handleSubmit = async () => {
 
   loading.value = true
   try {
+    await uploadPendingFiles()
     await petApi.create(form)
     ElMessage.success('发布成功')
     router.push('/my-pets')
